@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DevMind — AI Coding Assistant</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <!-- Markdown renderer -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── SIDEBAR ─────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">⌥</span>
+        <span class="logo-text">DevMind</span>
+      </div>
+      <button class="new-chat-btn" id="newChatBtn">+ New Chat</button>
+    </div>
+
+    <div class="model-selector">
+      <label>Model</label>
+      <select id="modelSelect">
+        <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (Free)</option>
+        <option value="deepseek/deepseek-r1:free">DeepSeek R1 (Free)</option>
+        <option value="google/gemma-3-27b-it:free">Gemma 3 27B (Free)</option>
+        <option value="mistralai/mistral-small-3.1-24b-instruct:free">Mistral Small 24B (Free)</option>
+        <option value="qwen/qwen2.5-vl-72b-instruct:free">Qwen 2.5 72B (Free)</option>
+        <option value="microsoft/phi-4-reasoning:free">Phi 4 Reasoning (Free)</option>
+      </select>
+    </div>
+
+    <div class="chat-list-label">Chats</div>
+    <div class="chat-list" id="chatList">
+      <!-- Chat history items go here -->
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="settings-btn" id="settingsBtn">⚙ Settings</button>
+    </div>
+  </aside>
+
+  <!-- ── MAIN AREA ───────────────────────────────────────── -->
+  <main class="main">
+
+    <!-- Top bar -->
+    <header class="topbar">
+      <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+      <span class="topbar-title" id="topbarTitle">New Chat</span>
+      <div class="topbar-right">
+        <span class="status-dot" id="statusDot"></span>
+        <span class="status-text" id="statusText">Ready</span>
+      </div>
+    </header>
+
+    <!-- Messages -->
+    <div class="messages" id="messages">
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">⌥</div>
+        <h1>DevMind</h1>
+        <p>Your AI coding assistant. Ask me anything about code, tech, bugs, or concepts.</p>
+        <div class="suggestions">
+          <button class="suggest-btn" onclick="fillInput('Write a Python web scraper using BeautifulSoup')">🕷 Python web scraper</button>
+          <button class="suggest-btn" onclick="fillInput('Explain how async/await works in JavaScript')">⚡ Async/await explained</button>
+          <button class="suggest-btn" onclick="fillInput('Build a REST API in Node.js with Express')">🛠 REST API in Node.js</button>
+          <button class="suggest-btn" onclick="fillInput('What is the difference between SQL and NoSQL?')">🗄 SQL vs NoSQL</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input area -->
+    <div class="input-area">
+      <div class="input-box">
+        <textarea
+          id="userInput"
+          placeholder="Ask me to write code, explain concepts, debug..."
+          rows="1"
+        ></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+      <p class="input-hint">Free models via OpenRouter · No data stored</p>
+    </div>
+  </main>
+
+  <!-- ── SETTINGS MODAL ──────────────────────────────────── -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button class="modal-close" id="modalClose">✕</button>
+      </div>
+      <div class="modal-body">
+        <label>Worker URL <span class="hint">(your Cloudflare Worker URL)</span></label>
+        <input type="text" id="workerUrl" placeholder="https://your-worker.username.workers.dev" />
+
+        <label>System Prompt</label>
+        <textarea id="systemPrompt" rows="5">You are DevMind, an expert AI coding assistant. You help with programming, debugging, explaining technical concepts, and writing clean, well-commented code. When writing code, always use markdown code blocks with the correct language tag. Be concise but thorough.</textarea>
+
+        <button class="save-btn" id="saveSettings">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
