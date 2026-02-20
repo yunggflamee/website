@@ -1,66 +1,95 @@
-const WORKER_URL = "https://devbuildai.infinityabs4.workers.dev"
+const WORKER_URL = "https://devbuildai.infinityabs4.workers.dev";
 
 const chat = document.getElementById("chat");
 const input = document.getElementById("messageInput");
-const sendBtn = document.getElementById("sendBtn");
+const button = document.getElementById("sendBtn");
 
-function createMessage(text, className) {
+function createMessage(text, type) {
+
   const div = document.createElement("div");
-  div.classList.add("message", className);
+
+  div.classList.add("message", type);
+
   div.textContent = text;
+
   return div;
 }
 
-function scrollToBottom() {
+function scrollBottom() {
   chat.scrollTop = chat.scrollHeight;
+}
+
+function typeEffect(element, text, speed = 12) {
+
+  element.textContent = "";
+
+  let i = 0;
+
+  function type() {
+
+    if (i < text.length) {
+
+      element.textContent += text.charAt(i);
+
+      i++;
+
+      setTimeout(type, speed);
+    }
+  }
+
+  type();
 }
 
 async function sendMessage() {
 
   const message = input.value.trim();
+
   if (!message) return;
 
-  // Add user message
   chat.appendChild(createMessage(message, "user"));
-  scrollToBottom();
+
   input.value = "";
 
-  // Add thinking message
   const thinking = createMessage("Thinking...", "ai");
+
   chat.appendChild(thinking);
-  scrollToBottom();
+
+  scrollBottom();
 
   try {
 
     const response = await fetch(WORKER_URL, {
+
       method: "POST",
+
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ message })
-    });
 
-    if (!response.ok) {
-      throw new Error("Server error");
-    }
+      body: JSON.stringify({
+        message
+      })
+    });
 
     const data = await response.json();
 
-    thinking.textContent = data.reply || "No response";
+    typeEffect(thinking, data.reply || "No response");
 
-  } catch (error) {
+  }
+
+  catch {
 
     thinking.textContent = "Connection error";
 
   }
 
-  scrollToBottom();
+  scrollBottom();
 }
 
-sendBtn.addEventListener("click", sendMessage);
+button.onclick = sendMessage;
 
-input.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") {
-    sendMessage();
-  }
+input.addEventListener("keypress", e => {
+
+  if (e.key === "Enter") sendMessage();
+
 });
