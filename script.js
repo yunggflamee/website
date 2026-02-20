@@ -222,6 +222,7 @@ function copyCode(id, btn) {
   });
 }
 
+
 // ── SUGGESTION BUTTONS ───────────────────────────────────────
 function fillInput(text) {
   const input = document.getElementById("userInput");
