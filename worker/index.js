@@ -34,7 +34,7 @@ export default {
         headers: {
           "Authorization": `Bearer ${env.OPENROUTER_API_KEY}`,  // Secret key, never exposed
           "Content-Type": "application/json",
-          "HTTP-Referer": "https://your-site.pages.dev",        // Change to your Cloudflare Pages URL
+          "HTTP-Referer": "https://devmind.ai.pages.dev",        // Change to your Cloudflare Pages URL
           "X-Title": "My AI Coding Assistant",
         },
         body: JSON.stringify({

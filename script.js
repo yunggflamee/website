@@ -1,266 +1,156 @@
-let WORKER_URL =
-localStorage.getItem("workerUrl") || "";
+// ===== CONFIG =====
 
-let chats =
-JSON.parse(localStorage.getItem("chats") || "{}");
-
-let activeId = null;
-let isThinking = false;
-
-window.addEventListener("DOMContentLoaded", () => {
-
-loadSettings();
-renderChatList();
-
-marked.setOptions({
-highlight: (code, lang) => {
-if (lang && hljs.getLanguage(lang)) {
-return hljs.highlight(code, { language: lang }).value;
-}
-return hljs.highlightAuto(code).value;
-},
-breaks: true,
-});
-
-document.getElementById("sendBtn").onclick = sendMessage;
-document.getElementById("newChatBtn").onclick = startNewChat;
-
-document.getElementById("settingsBtn").onclick =
-() => document.getElementById("modalOverlay").classList.add("open");
-
-document.getElementById("modalClose").onclick =
-() => document.getElementById("modalOverlay").classList.remove("open");
-
-document.getElementById("saveSettings").onclick = saveSettings;
-
-});
-
-
-async function sendMessage(){
-
-const input = document.getElementById("userInput");
-const text  = input.value.trim();
-
-if(!text || isThinking) return;
-
-if(!WORKER_URL){
-alert("Set your Worker URL in Settings.");
-return;
-}
-
-if(!activeId) startNewChat();
-
-appendMessage("user", text);
-
-chats[activeId].messages.push({
-role:"user",
-content:text
-});
-
-input.value="";
-
-setThinking(true);
-
-const thinkingEl = appendThinking();
-
-try{
-
-const model =
-document.getElementById("modelSelect").value;
-
-const sysPrompt =
-document.getElementById("systemPrompt").value;
-
-const messages = [
-{ role:"system", content: sysPrompt },
-...chats[activeId].messages
+// Fastest free models (priority order)
+const MODELS = [
+  "meta-llama/llama-3.1-8b-instruct:free",
+  "google/gemma-2-9b-it:free",
+  "mistralai/mistral-7b-instruct:free"
 ];
 
-const response = await fetch(WORKER_URL,{
-method:"POST",
-headers:{ "Content-Type":"application/json" },
-body: JSON.stringify({ model, messages })
-});
+let currentModel = MODELS[0];
 
-const data = await response.json();
+let WORKER_URL =
+  localStorage.getItem("workerUrl") ||
+  "https://your-worker-name.your-username.workers.dev";
 
-thinkingEl.remove();
+let messages = [];
 
-const aiText =
-data.choices?.[0]?.message?.content
-|| "No response";
+// ===== DOM =====
 
-appendMessage("assistant", aiText);
+const chatBox = document.getElementById("chatBox");
+const input = document.getElementById("input");
+const sendBtn = document.getElementById("sendBtn");
+const modelSelect = document.getElementById("modelSelect");
+const saveWorkerBtn = document.getElementById("saveWorker");
+const workerInput = document.getElementById("workerInput");
 
-chats[activeId].messages.push({
-role:"assistant",
-content: aiText
-});
+// ===== LOAD SETTINGS =====
 
-saveChats();
+workerInput.value = WORKER_URL;
 
-}catch(err){
+// ===== SAVE WORKER URL =====
 
-thinkingEl.remove();
-appendMessage("error", err.message);
-
-}
-
-setThinking(false);
-}
-
-
-
-function appendMessage(role, content){
-
-document.getElementById("welcome")?.remove();
-
-const container =
-document.getElementById("messages");
-
-const div = document.createElement("div");
-div.className = `message ${role}`;
-
-let avatar, contentHtml;
-
-if(role==="user"){
-avatar = `<div class="avatar user-avatar">👤</div>`;
-contentHtml =
-`<div class="message-content">${escapeHtml(content)}</div>`;
-}
-else if(role==="assistant"){
-avatar = `<div class="avatar ai-avatar">D</div>`;
-contentHtml =
-`<div class="message-content">${marked.parse(content)}</div>`;
-}
-else{
-avatar = `<div class="avatar ai-avatar">!</div>`;
-contentHtml =
-`<div class="message-content" style="color:#ef4444">${escapeHtml(content)}</div>`;
-}
-
-div.innerHTML =
-`<div class="message-inner">${avatar}${contentHtml}</div>`;
-
-container.appendChild(div);
-container.scrollTop = container.scrollHeight;
-return div;
-}
-
-
-
-function appendThinking(){
-const container =
-document.getElementById("messages");
-
-const div = document.createElement("div");
-div.className="message ai thinking-msg";
-div.innerHTML=`
-<div class="message-inner">
-<div class="avatar ai-avatar">D</div>
-<div class="message-content">Thinking</div>
-</div>`;
-container.appendChild(div);
-container.scrollTop = container.scrollHeight;
-return div;
-}
-
-
-
-function startNewChat(){
-
-const id="chat-"+Date.now();
-
-chats[id]={
-title:"New Chat",
-messages:[]
+saveWorkerBtn.onclick = () => {
+  WORKER_URL = workerInput.value.trim();
+  localStorage.setItem("workerUrl", WORKER_URL);
+  alert("Worker URL saved");
 };
 
-activeId=id;
+// ===== MODEL CHANGE =====
 
-saveChats();
-renderChatList();
+modelSelect.onchange = () => {
+  currentModel = modelSelect.value;
+};
 
-document.getElementById("messages").innerHTML="";
-document.getElementById("topbarTitle").textContent="New Chat";
+// ===== UI FUNCTIONS =====
 
+function addMessage(role, text) {
+  const div = document.createElement("div");
+  div.className = role;
+  div.innerText = text;
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+// ===== TIMEOUT FETCH =====
 
+async function fetchWithTimeout(url, options, timeout = 15000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
 
-function renderChatList(){
+  options.signal = controller.signal;
 
-const list=document.getElementById("chatList");
-list.innerHTML="";
+  try {
+    const response = await fetch(url, options);
+    clearTimeout(id);
+    return response;
+  } catch (err) {
+    clearTimeout(id);
+    throw err;
+  }
+}
 
-Object.entries(chats)
-.reverse()
-.forEach(([id, chat])=>{
+// ===== TRY MODELS UNTIL SUCCESS =====
 
-const item=document.createElement("div");
-item.className="chat-item";
-item.textContent=chat.title;
-item.onclick=()=>loadChat(id);
-list.appendChild(item);
+async function tryModels() {
 
+  for (let model of MODELS) {
+
+    try {
+
+      const response = await fetchWithTimeout(
+        WORKER_URL,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            messages,
+          }),
+        },
+        15000
+      );
+
+      if (!response.ok) continue;
+
+      const data = await response.json();
+
+      if (data.choices && data.choices[0]) {
+        currentModel = model;
+        return data.choices[0].message.content;
+      }
+
+    } catch (err) {
+      continue;
+    }
+
+  }
+
+  throw new Error("All models failed");
+}
+
+// ===== SEND MESSAGE =====
+
+async function sendMessage() {
+
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = "";
+
+  addMessage("user", text);
+
+  messages.push({
+    role: "user",
+    content: text
+  });
+
+  addMessage("assistant", "Thinking...");
+
+  try {
+
+    const reply = await tryModels();
+
+    chatBox.lastChild.innerText = reply;
+
+    messages.push({
+      role: "assistant",
+      content: reply
+    });
+
+  }
+  catch (err) {
+    chatBox.lastChild.innerText =
+      "Error: All models busy. Try again.";
+  }
+}
+
+// ===== EVENTS =====
+
+sendBtn.onclick = sendMessage;
+
+input.addEventListener("keypress", e => {
+  if (e.key === "Enter") sendMessage();
 });
-}
-
-
-
-function loadChat(id){
-
-activeId=id;
-
-const chat=chats[id];
-
-document.getElementById("topbarTitle").textContent=chat.title;
-
-document.getElementById("messages").innerHTML="";
-
-chat.messages.forEach(msg=>{
-appendMessage(msg.role,msg.content);
-});
-
-}
-
-
-
-function saveChats(){
-localStorage.setItem("chats",JSON.stringify(chats));
-}
-
-
-
-function saveSettings(){
-WORKER_URL=document.getElementById("workerUrl").value.trim();
-localStorage.setItem("workerUrl",WORKER_URL);
-document.getElementById("modalOverlay").classList.remove("open");
-}
-
-
-
-function loadSettings(){
-const url=localStorage.getItem("workerUrl")||"";
-document.getElementById("workerUrl").value=url;
-WORKER_URL=url;
-}
-
-
-
-function setThinking(val){
-isThinking=val;
-document.getElementById("sendBtn").disabled=val;
-document.getElementById("statusDot").className="status-dot"+(val?" thinking":"");
-document.getElementById("statusText").textContent=val?"Thinking…":"Ready";
-}
-
-
-
-function escapeHtml(str){
-return str
-.replace(/&/g,"&amp;")
-.replace(/</g,"&lt;")
-.replace(/>/g,"&gt;")
-.replace(/"/g,"&quot;");
-}

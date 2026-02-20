@@ -1,105 +1,262 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>DevMind — AI Coding Assistant</title>
 
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Highlight.js -->
-  <link rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"/>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<title>DevMind AI</title>
 
-  <!-- Markdown -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<link rel="stylesheet" href="style.css">
 
-  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 
 <!-- SIDEBAR -->
-<aside class="sidebar" id="sidebar">
+<div class="sidebar" id="sidebar">
+
   <div class="sidebar-header">
+
     <div class="logo">
-      <span class="logo-icon">⌥</span>
-      <span class="logo-text">DevMind</span>
+      <div class="logo-icon">D</div>
+      <div class="logo-text">DevMind</div>
     </div>
-    <button class="new-chat-btn" id="newChatBtn">+ New Chat</button>
+
+    <button class="new-chat-btn" onclick="newChat()">
+      + New Chat
+    </button>
+
   </div>
+
 
   <div class="model-selector">
-    <label>Model</label>
+
+    <label>MODEL</label>
+
     <select id="modelSelect">
-      <option value="qwen/qwen3-coder:free">Qwen3 Coder</option>
-      <option value="deepseek/deepseek-r1-0528:free">DeepSeek R1</option>
-      <option value="openai/gpt-oss-120b:free">GPT OSS 120B</option>
+
+      <option value="meta-llama/llama-3.1-8b-instruct:free">
+        Llama 3.1 Fast
+      </option>
+
+      <option value="google/gemma-2-9b-it:free">
+        Gemma 2 Fast
+      </option>
+
+      <option value="mistralai/mistral-7b-instruct:free">
+        Mistral Fast
+      </option>
+
     </select>
+
   </div>
 
-  <div class="chat-list-label">Chats</div>
-  <div class="chat-list" id="chatList"></div>
+
+  <div class="chat-list-label">
+    CHATS
+  </div>
+
+  <div class="chat-list" id="chatList">
+  </div>
+
 
   <div class="sidebar-footer">
-    <button class="settings-btn" id="settingsBtn">⚙ Settings</button>
-  </div>
-</aside>
 
-<!-- MAIN -->
-<main class="main">
-
-<header class="topbar">
-  <button class="sidebar-toggle" id="sidebarToggle">☰</button>
-  <span class="topbar-title" id="topbarTitle">New Chat</span>
-  <div class="topbar-right">
-    <span class="status-dot" id="statusDot"></span>
-    <span class="status-text" id="statusText">Ready</span>
-  </div>
-</header>
-
-<div class="messages" id="messages">
-  <div class="welcome" id="welcome">
-    <div class="welcome-icon">⌥</div>
-    <h1>DevMind</h1>
-    <p>Your AI coding assistant powered by OpenRouter.</p>
-  </div>
-</div>
-
-<div class="input-area">
-  <div class="input-box">
-    <textarea id="userInput" placeholder="Ask anything..." rows="1"></textarea>
-    <button class="send-btn" id="sendBtn">
-      ➤
+    <button class="settings-btn" onclick="openSettings()">
+      Settings
     </button>
+
   </div>
-  <p class="input-hint">Free models via OpenRouter · API secured in Worker</p>
+
 </div>
 
-</main>
+
+
+<!-- MAIN AREA -->
+<div class="main">
+
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+
+    <button class="sidebar-toggle" onclick="toggleSidebar()">
+      ☰
+    </button>
+
+    <div class="topbar-title">
+      DevMind AI
+    </div>
+
+    <div class="topbar-right">
+
+      <div class="status-dot" id="statusDot"></div>
+
+      <div class="status-text" id="statusText">
+        Ready
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- MESSAGES -->
+  <div class="messages" id="messages">
+
+    <div class="welcome" id="welcome">
+
+      <div class="welcome-icon">
+        D
+      </div>
+
+      <h1>
+        DevMind AI
+      </h1>
+
+      <p>
+        Ask coding questions, build apps, debug errors, or learn anything.
+      </p>
+
+
+      <div class="suggestions">
+
+        <button class="suggest-btn" onclick="suggest('Build a modern website')">
+          Build a modern website
+        </button>
+
+        <button class="suggest-btn" onclick="suggest('Fix my JavaScript code')">
+          Fix my JavaScript code
+        </button>
+
+        <button class="suggest-btn" onclick="suggest('Explain async await')">
+          Explain async await
+        </button>
+
+        <button class="suggest-btn" onclick="suggest('Create a Python project')">
+          Create a Python project
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- INPUT -->
+  <div class="input-area">
+
+    <div class="input-box">
+
+      <textarea
+        id="userInput"
+        placeholder="Message DevMind AI..."
+        rows="1"
+      ></textarea>
+
+      <button
+        class="send-btn"
+        id="sendBtn"
+      >
+        ➤
+      </button>
+
+    </div>
+
+    <div class="input-hint">
+      Press Enter to send
+    </div>
+
+  </div>
+
+
+</div>
+
+
 
 <!-- SETTINGS MODAL -->
-<div class="modal-overlay" id="modalOverlay">
+<div class="modal-overlay" id="settingsModal">
+
   <div class="modal">
+
     <div class="modal-header">
+
       <h2>Settings</h2>
-      <button class="modal-close" id="modalClose">✕</button>
+
+      <button class="modal-close" onclick="closeSettings()">
+        ✕
+      </button>
+
     </div>
+
+
     <div class="modal-body">
-      <label>Worker URL</label>
-      <input type="text" id="workerUrl" placeholder="https://your-worker.workers.dev"/>
 
-      <label>System Prompt</label>
-      <textarea id="systemPrompt" rows="4">
-You are DevMind, an expert AI coding assistant.
-      </textarea>
+      <label>
+        Worker URL
+      </label>
 
-      <button class="save-btn" id="saveSettings">Save</button>
+      <input
+        id="workerInput"
+        placeholder="https://your-worker.workers.dev"
+      >
+
+      <button
+        class="save-btn"
+        id="saveWorker"
+      >
+        Save
+      </button>
+
     </div>
+
   </div>
+
 </div>
 
+
 <script src="script.js"></script>
+
+
+<script>
+
+/* SIDEBAR */
+function toggleSidebar() {
+  document.getElementById("sidebar")
+    .classList.toggle("collapsed");
+}
+
+/* SETTINGS */
+function openSettings() {
+  document.getElementById("settingsModal")
+    .classList.add("open");
+}
+
+function closeSettings() {
+  document.getElementById("settingsModal")
+    .classList.remove("open");
+}
+
+/* NEW CHAT */
+function newChat() {
+
+  messages = [];
+
+  document.getElementById("messages").innerHTML =
+    document.getElementById("welcome").outerHTML;
+
+}
+
+/* SUGGESTION */
+function suggest(text) {
+
+  document.getElementById("userInput").value = text;
+
+}
+
+</script>
+
 </body>
 </html>
